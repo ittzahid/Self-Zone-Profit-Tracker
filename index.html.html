@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Self Zone Profit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf6fb;--card:#fff;--ink:#2a1a33;--mute:#6f5f7a;--line:#e6dcec;--acc:#a3246b;--accfg:#fff;--good:#1f7a55;--bad:#b3261e;--soft:#f3e9f6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1220;--card:#251a2e;--ink:#f3eaf7;--mute:#b7a6c3;--line:#3a2c46;--acc:#e0609f;--accfg:#1a1220;--good:#5fd0a0;--bad:#ff8a80;--soft:#2f2239;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1220;--card:#251a2e;--ink:#f3eaf7;--mute:#b7a6c3;--line:#3a2c46;--acc:#e0609f;--accfg:#1a1220;--good:#5fd0a0;--bad:#ff8a80;--soft:#2f2239;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.5rem;font-weight:800;margin:0}
+h2{font-size:1.05rem;font-weight:800;margin:0 0 12px}
+.sub{color:var(--mute);margin:2px 0 18px;font-size:.92rem}
+.hero{background:var(--acc);color:var(--accfg);border-radius:18px;padding:22px 20px;margin-bottom:16px}
+.hero .lbl{font-size:.9rem;opacity:.9}
+.hero .big{font-size:2.4rem;font-weight:800;line-height:1.15}
+.hero .row{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px;font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:8px;padding:10px 12px}
+.stat span{display:block;font-size:.78rem;color:var(--mute)}
+.stat b{font-size:1.1rem}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+label{font-size:.8rem;color:var(--mute);display:block;margin-bottom:3px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:10px 14px;background:var(--acc);color:var(--accfg);cursor:pointer}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line);padding:6px 10px;font-size:.8rem}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:620px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:600;font-size:.78rem}
+td.n,th.n{text-align:right}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.empty{color:var(--mute);padding:10px 0}
+.tag{background:var(--soft);border-radius:6px;padding:2px 7px;font-size:.78rem}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.note{font-size:.8rem;color:var(--mute);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>Self Zone profit tracker</h1><p class="sub">Add your orders and expenses. Profit updates automatically.</p></div>
+    <button class="ghost" id="reset">Clear all data</button>
+  </div>
+
+  <div class="hero">
+    <div class="lbl">Net profit <span id="period-lbl">(all time)</span></div>
+    <div class="big" id="net">৳0</div>
+    <div class="row"><span>Profit margin: <b id="margin">0%</b></span><span>Delivered orders: <b id="cnt">0</b></span><span>Returned: <b id="ret">0</b></span></div>
+  </div>
+
+  <div class="card">
+    <h2>Show month</h2>
+    <select id="month"></select>
+  </div>
+
+  <div class="card">
+    <h2>Where the money goes</h2>
+    <div class="grid" id="stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Profit by product type</h2>
+    <div class="scroll"><table><thead><tr><th>Type</th><th class="n">Pieces sold</th><th class="n">Sales</th><th class="n">Profit</th></tr></thead><tbody id="bytype"></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Add an order</h2>
+    <form id="of">
+      <div><label>Date</label><input type="date" id="o-date" required></div>
+      <div><label>Item name</label><input id="o-name" placeholder="e.g. Blue lawn three-piece" required></div>
+      <div><label>Type</label><select id="o-type"><option>Three-piece</option><option>Kurti</option><option>Two-piece</option><option>Other</option></select></div>
+      <div><label>Quantity</label><input type="number" id="o-qty" min="1" value="1" required></div>
+      <div><label>Buying cost (each, ৳)</label><input type="number" id="o-cost" min="0" step="any" required></div>
+      <div><label>Selling price (each, ৳)</label><input type="number" id="o-price" min="0" step="any" required></div>
+      <div><label>Delivery charge from customer (৳)</label><input type="number" id="o-dch" min="0" step="any" value="0"></div>
+      <div><label>Courier cost you pay (৳)</label><input type="number" id="o-cc" min="0" step="any" value="0"></div>
+      <div><label>Status</label><select id="o-status"><option value="delivered">Delivered</option><option value="returned">Returned</option></select></div>
+      <div><button type="submit">Save order</button></div>
+    </form>
+    <p class="note">Returned orders count no sales. Only the courier cost you paid is counted as a loss.</p>
+  </div>
+
+  <div class="card">
+    <h2>Orders</h2>
+    <div class="scroll"><table><thead><tr><th>Date</th><th>Item</th><th>Type</th><th class="n">Qty</th><th class="n">Sales</th><th class="n">Profit</th><th>Status</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Add an expense</h2>
+    <form id="ef">
+      <div><label>Date</label><input type="date" id="e-date" required></div>
+      <div><label>What for</label><input id="e-name" placeholder="e.g. Facebook boost" required></div>
+      <div><label>Category</label><select id="e-cat"><option>Ads</option><option>Packaging</option><option>Photo/model</option><option>Rent</option><option>Staff</option><option>Transport</option><option>Other</option></select></div>
+      <div><label>Amount (৳)</label><input type="number" id="e-amt" min="0" step="any" required></div>
+      <div><button type="submit">Save expense</button></div>
+    </form>
+    <div class="scroll" style="margin-top:12px"><table><thead><tr><th>Date</th><th>What for</th><th>Category</th><th class="n">Amount</th><th></th></tr></thead><tbody id="exps"></tbody></table></div>
+  </div>
+</div>
+
+<script>
+(function(){
+var KEY='selfzone-profit-v1';
+var data={orders:[],exps:[]};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.orders&&p.exps)data=p;}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+function $(id){return document.getElementById(id);}
+function tk(n){var s=Math.round(Math.abs(n)).toLocaleString('en-US');return (n<0?'−':'')+'৳'+s;}
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+$('o-date').value=today();$('e-date').value=today();
+var sel='all';
+
+function calc(o){
+  if(o.status==='returned')return {sales:0,cogs:0,dch:0,cc:o.cc,profit:-o.cc};
+  var sales=o.qty*o.price,cogs=o.qty*o.cost;
+  return {sales:sales,cogs:cogs,dch:o.dch,cc:o.cc,profit:sales-cogs+o.dch-o.cc};
+}
+function months(){
+  var set={};data.orders.concat(data.exps).forEach(function(x){set[x.date.slice(0,7)]=1;});
+  set[today().slice(0,7)]=1;
+  return Object.keys(set).sort().reverse();
+}
+function drawMonths(){
+  var m=$('month'),h='<option value="all">All time</option>';
+  months().forEach(function(k){var d=new Date(k+'-01T00:00:00');h+='<option value="'+k+'">'+d.toLocaleString('en-US',{month:'long',year:'numeric'})+'</option>';});
+  m.innerHTML=h;m.value=sel;if(m.value!==sel){sel='all';m.value='all';}
+}
+function inSel(x){return sel==='all'||x.date.slice(0,7)===sel;}
+
+function render(){
+  drawMonths();
+  var os=data.orders.filter(inSel),es=data.exps.filter(inSel);
+  var T={sales:0,cogs:0,dch:0,cc:0,exp:0},cnt=0,ret=0,types={};
+  os.forEach(function(o){
+    var c=calc(o);T.sales+=c.sales;T.cogs+=c.cogs;T.dch+=c.dch;T.cc+=c.cc;
+    if(o.status==='returned')ret++;else cnt++;
+    var t=types[o.type]||(types[o.type]={qty:0,sales:0,profit:0});
+    if(o.status!=='returned'){t.qty+=o.qty;t.sales+=c.sales;}
+    t.profit+=c.profit;
+  });
+  es.forEach(function(e){T.exp+=e.amt;});
+  var gross=T.sales-T.cogs+T.dch-T.cc,net=gross-T.exp;
+  var margin=T.sales>0?(net/T.sales*100):0;
+  var netEl=$('net');netEl.textContent=tk(net);
+  $('margin').textContent=margin.toFixed(1)+'%';$('cnt').textContent=cnt;$('ret').textContent=ret;
+  $('period-lbl').textContent=sel==='all'?'(all time)':'('+$('month').options[$('month').selectedIndex].text+')';
+  var items=[['Total sales',T.sales],['Buying cost of items',-T.cogs],['Delivery charges collected',T.dch],['Courier cost paid',-T.cc],['Profit before expenses',gross],['Other expenses',-T.exp]];
+  $('stats').innerHTML=items.map(function(i){return '<div class="stat"><span>'+i[0]+'</span><b class="'+(i[1]<0?'bad':'')+'">'+tk(i[1])+'</b></div>';}).join('');
+  var tr=Object.keys(types).map(function(k){var t=types[k];return '<tr><td>'+esc(k)+'</td><td class="n">'+t.qty+'</td><td class="n">'+tk(t.sales)+'</td><td class="n '+(t.profit<0?'bad':'good')+'">'+tk(t.profit)+'</td></tr>';}).join('');
+  $('bytype').innerHTML=tr||'<tr><td colspan="4" class="empty">No orders yet for this period.</td></tr>';
+  var ol=os.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(o){
+    var c=calc(o);
+    return '<tr><td>'+o.date+'</td><td>'+esc(o.name)+'</td><td><span class="tag">'+esc(o.type)+'</span></td><td class="n">'+o.qty+'</td><td class="n">'+tk(c.sales)+'</td><td class="n '+(c.profit<0?'bad':'good')+'">'+tk(c.profit)+'</td><td>'+(o.status==='returned'?'Returned':'Delivered')+'</td><td><button class="ghost" data-do="'+o.id+'">Delete</button></td></tr>';
+  }).join('');
+  $('orders').innerHTML=ol||'<tr><td colspan="8" class="empty">Add your first order above.</td></tr>';
+  var el=es.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(e){
+    return '<tr><td>'+e.date+'</td><td>'+esc(e.name)+'</td><td><span class="tag">'+esc(e.cat)+'</span></td><td class="n bad">'+tk(e.amt)+'</td><td><button class="ghost" data-de="'+e.id+'">Delete</button></td></tr>';
+  }).join('');
+  $('exps').innerHTML=el||'<tr><td colspan="5" class="empty">No expenses yet for this period.</td></tr>';
+}
+
+function num(id){var v=parseFloat($(id).value);return isNaN(v)?0:v;}
+$('of').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  data.orders.push({id:Date.now(),date:$('o-date').value,name:$('o-name').value.trim(),type:$('o-type').value,qty:Math.max(1,Math.round(num('o-qty'))),cost:num('o-cost'),price:num('o-price'),dch:num('o-dch'),cc:num('o-cc'),status:$('o-status').value});
+  save();$('o-name').value='';$('o-cost').value='';$('o-price').value='';$('o-qty').value=1;$('o-status').value='delivered';render();
+});
+$('ef').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  data.exps.push({id:Date.now(),date:$('e-date').value,name:$('e-name').value.trim(),cat:$('e-cat').value,amt:num('e-amt')});
+  save();$('e-name').value='';$('e-amt').value='';render();
+});
+document.addEventListener('click',function(ev){
+  var t=ev.target;
+  if(t.dataset&&t.dataset.do){data.orders=data.orders.filter(function(o){return String(o.id)!==t.dataset.do;});save();render();}
+  if(t.dataset&&t.dataset.de){data.exps=data.exps.filter(function(o){return String(o.id)!==t.dataset.de;});save();render();}
+});
+$('month').addEventListener('change',function(){sel=this.value;render();});
+$('reset').addEventListener('click',function(){
+  if(this.dataset.arm){data={orders:[],exps:[]};save();delete this.dataset.arm;this.textContent='Clear all data';render();}
+  else{this.dataset.arm=1;this.textContent='Tap again to confirm';var b=this;setTimeout(function(){delete b.dataset.arm;b.textContent='Clear all data';},3000);}
+});
+render();
+})();
+</script>
+</body>
+</html>
